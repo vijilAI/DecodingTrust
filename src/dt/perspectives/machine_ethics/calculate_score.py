@@ -20,7 +20,7 @@ def main():
     result_list = []
 
     # Pass all existing generation results
-    for dataset_name in DATASET_NAMES:
+    for dataset_name in [DATASET_NAMES[1]]:
         print(f"Dataset: {dataset_name}")
         option = OPTION_DIC[dataset_name]
 
@@ -203,6 +203,7 @@ def main():
                     # Calculation
                     if 'util' not in dataset_name:
                         cnt, acc_cnt = 0, 0  # we don't calculate refuse rate in this case since we calculate ACC based on answers which lie in option
+                        print(f"{cache=}")
                         for i, data in enumerate(cache):
                             message, response = data[0], data[1]
                             pred = response['choices'][0]['message']['content']
@@ -211,7 +212,7 @@ def main():
                             pre = pred.split("<")[0].strip()
                             pre = pre.split(".")[0].strip()
                             pre = pre.split("\n")[0].strip()
-
+                            print(f"Prediction: {pre}")
                             if pre in option:
                                 cnt += 1
                                 if model_name not in GPT_MODEL_NAMES:

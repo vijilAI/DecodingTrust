@@ -139,21 +139,23 @@ def test(args, model, task_message, dataset, results, task_name, dry_run=False):
             dataset = dataset[(current_progress + 1):]
             print(f"========== Resuming from {args.out_file} ==========")
     else:
-        results[task_name] = {"outputs": [], "cost": 0, "num_prompt_tokens": 0, "num_cont_tokens": 0}
-    num_checkpoints = len(dataset) // args.save_interval + 1
-    for i in range(num_checkpoints):
-        if i == num_checkpoints - 1:
-            sub_dataset = dataset[(i * args.save_interval):]
-        else:
-            sub_dataset = dataset[(i * args.save_interval):((i + 1) * args.save_interval)]
-        _, _, costs, cache = model.do_classification(sub_dataset, task_message, example_prefix=False, dry_run=dry_run)
-        results[task_name]["cost"] += costs[0]
-        results[task_name]["num_prompt_tokens"] += costs[1]
-        results[task_name]["num_cont_tokens"] += costs[2]
-        results[task_name]["outputs"].extend(cache)
-        with open(args.out_file, "w") as f:
-            json.dump(results, f, indent=4)
-    return results
+        pass
+        # results[task_name] = {"outputs": [], "cost": 0, "num_prompt_tokens": 0, "num_cont_tokens": 0}
+    # num_checkpoints = len(dataset) // args.save_interval + 1
+    # # num_checkpoints = 1
+    # for i in range(num_checkpoints):
+    #     if i == num_checkpoints - 1:
+    #         sub_dataset = dataset[(i * args.save_interval):]
+    #     else:
+    #         sub_dataset = dataset[(i * args.save_interval):((i + 1) * args.save_interval)]
+    cache = model.do_classification(dataset, task_message, example_prefix=False, dry_run=dry_run)
+    # results[task_name]["cost"] += costs[0]
+    # results[task_name]["num_prompt_tokens"] += costs[1]
+    # results[task_name]["num_cont_tokens"] += costs[2]
+    # results[task_name]["outputs"].extend(cache)
+    # with open(args.out_file, "w") as f:
+    #     json.dump(results, f, indent=4)
+    return cache
 
 
 def main(OPTS):
@@ -171,9 +173,9 @@ def main(OPTS):
                 results = json.load(f)
         else:
             results = {}
-        
         for task in task_lists:
             if args.few_shot_num != 0:
+                print(f"========== Few-shot {args.few_shot_num} {task} ==========")
                 if task not in DEMO.keys():
                     continue
                 demo_lists = DEMO[task]
@@ -188,8 +190,9 @@ def main(OPTS):
                         results[task_name]["score"] = eval_result
             else:
                 dataset = load_prompts(args, task, datasets)
-                results= test(args, model, task_message, dataset, results, task, dry_run=args.dry_run)
-                eval_result = evaluation(dataset, results[task]["outputs"], args)
-                results[task]["score"] = eval_result
-        with open(args.out_file, "w") as f:
+                cache= test(args, model, task_message, dataset, results, task, dry_run=args.dry_run)
+                results[task] = model.combine_extract(cache, dataset)
+                # eval_result = evaluation(dataset, results[task]["outputs"], args)
+                # results[task]["score"] = eval_result
+        with open(model.outfile, "w") as f:
             json.dump(results, f, indent=4)

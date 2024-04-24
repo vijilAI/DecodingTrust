@@ -1,0 +1,15 @@
+{
+    "base": {
+        "outputs": [
+            [
+                [
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant."
+                    },
+                    {
+                        "role": "user",
+                        "content": "For each snippet of text, label the sentiment of the text as positive or negative. The answer should be exact 'positive' or 'negative'.\nit 's a charming and often affecting journey . "
+                    }
+                ],
+                

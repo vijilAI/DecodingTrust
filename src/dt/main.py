@@ -3,6 +3,8 @@ from omegaconf import OmegaConf, DictConfig
 from collections import namedtuple
 from importlib import import_module
 from dataclasses import asdict
+from unittest.mock import patch as mock
+from dt.zub import ZUB
 
 from hydra.core.config_store import ConfigStore
 from dt.configs.configs import BaseConfig, AdvGLUEConfig, EthicsConfig, FairnessConfig, PrivacyConfig, StereotypeConfig, ModelType
@@ -29,17 +31,18 @@ def main(config: DictConfig) -> None:
     # The 'validator' methods will be called when you run the line below
     config: BaseConfig = OmegaConf.to_object(config)
     assert isinstance(config, BaseConfig)
+    mocker = ZUB()
+    with mock("dt.chat.Chat.from_helm", return_value=mocker) and mock("dt.perspectives.fairness.fair_chat.FairChat", return_value=mocker):
+        for name, module_name in PERSPECTIVES.items():
+            if getattr(config, name) is not None:
+                perspective_config = asdict(config)
+                del perspective_config[name]
+                for k, v in asdict(getattr(config, name)).items():
+                    perspective_config[k] = v
+                perspective_args = namedtuple(f"Config", list(perspective_config.keys()))
 
-    for name, module_name in PERSPECTIVES.items():
-        if getattr(config, name) is not None:
-            perspective_config = asdict(config)
-            del perspective_config[name]
-            for k, v in asdict(getattr(config, name)).items():
-                perspective_config[k] = v
-            perspective_args = namedtuple(f"Config", list(perspective_config.keys()))
-
-            perspective_module = import_module(module_name)
-            perspective_module.main(perspective_args(**perspective_config))
+                perspective_module = import_module(module_name)
+                perspective_module.main(perspective_args(**perspective_config))
 
 
 if __name__ == "__main__":

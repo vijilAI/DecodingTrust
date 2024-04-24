@@ -34,7 +34,12 @@ def main(args):
                 model_name=args.model.replace("hf/", ""), conv_template=args.conv_template, cache=dirname, api_key=args.key
             )
             task_message = task_dic[args.dataset]
-            acc, unknown, cost, cache, prediction = gpt.do_classification(dataset, task_message, example_prefix=True)
+            # acc, unknown, cost, cache, prediction = gpt.do_classification(dataset, task_message, example_prefix=True)
+            cache = gpt.do_classification(dataset, task_message, example_prefix=True)
+            os.makedirs(os.path.dirname(args.out_file), exist_ok=True)
+            with open(args.out_file, "w") as dest:
+                json.dump(cache, dest)
+            return
 
             print(acc, unknown, cost)
 
